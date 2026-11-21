@@ -87,6 +87,11 @@ const shimsPlugin = {
 					const R = typeof React !== 'undefined' ? React : (typeof window !== 'undefined' ? window.React : null);
 					return P && R ? R.createElement(P, props) : null;
 				};
+				export const ScrollView = (props) => {
+					const S = getRN().ScrollView;
+					const R = typeof React !== 'undefined' ? React : (typeof window !== 'undefined' ? window.React : null);
+					return S && R ? R.createElement(S, props) : null;
+				};
 				export const StyleSheet = {
 					create: (styles) => {
 						const rn = getRN();

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { ui, toasts } from '@unbound-app/api';
-import { PLATFORMS, type PlatformId } from './lib/constants';
+import { PLATFORMS, type PlatformId, type PlatformConfig } from './lib/constants';
 import { getSetting, setSetting } from './lib/storage';
 import { forceIdentify, getSocketStatus } from './lib/gateway';
 import { DevicePreview } from './components/DevicePreview';
+import { PlatformBadge } from './components/PlatformBadge';
 
 export function SettingsPanel() {
 	const [platform, setPlatformState] = useState<PlatformId>(() => getSetting('platform'));
@@ -20,8 +22,8 @@ export function SettingsPanel() {
 		setSetting('platform', newPlatform);
 
 		// Automatically force clean re-identification on platform change
-		const ok = forceIdentify();
-		setTimeout(() => setSocketInfo(getSocketStatus()), 500);
+		forceIdentify();
+		setTimeout(() => setSocketInfo(getSocketStatus()), 600);
 
 		const config = PLATFORMS[newPlatform];
 		toasts.show({
@@ -32,7 +34,7 @@ export function SettingsPanel() {
 
 	const handleManualReconnect = () => {
 		const success = forceIdentify();
-		setTimeout(() => setSocketInfo(getSocketStatus()), 500);
+		setTimeout(() => setSocketInfo(getSocketStatus()), 600);
 
 		if (success) {
 			toasts.show({
@@ -47,164 +49,285 @@ export function SettingsPanel() {
 		}
 	};
 
+	const platformKeys: PlatformId[] = [
+		'meta',
+		'xbox',
+		'ps5',
+		'ps4',
+		'windows',
+		'macos',
+		'linux',
+		'web',
+		'android',
+		'ios',
+		'off',
+	];
+
+	const PageComponent = ui?.Page ?? ScrollView;
+
 	return (
-		<ui.Page>
+		<PageComponent style={styles.container}>
 			{/* Live Active Preview Card */}
-			<ui.Section title="ACTIVE SPOOF PREVIEW">
+			<View style={styles.section}>
+				<Text style={styles.sectionHeader}>ACTIVE SPOOF PREVIEW</Text>
 				<DevicePreview platformId={platform} />
-				<ui.ButtonRow
-					label="Force Gateway Re-Identify"
-					subLabel="Triggers immediate handshake so Voice Channels and profiles update instantly"
-					variant="primary"
-					onPress={handleManualReconnect}
-				/>
-			</ui.Section>
+				{ui?.ButtonRow ? (
+					<ui.ButtonRow
+						label="Force Gateway Re-Identify"
+						subLabel="Triggers immediate handshake so Voice Channels and profiles update instantly"
+						variant="button"
+						onPress={handleManualReconnect}
+					/>
+				) : (
+					<Pressable style={styles.reconnectButton} onPress={handleManualReconnect}>
+						<Text style={styles.reconnectButtonText}>⚡ Force Gateway Re-Identify</Text>
+					</Pressable>
+				)}
+			</View>
 
-			{/* VR Devices Section */}
-			<ui.Section title="VIRTUAL REALITY (VR)">
-				<ui.RadioRow
-					label={PLATFORMS.meta.label}
-					subLabel={PLATFORMS.meta.description}
-					selected={platform === 'meta'}
-					onPress={() => handlePlatformChange('meta')}
-				/>
-			</ui.Section>
+			{/* Visual Platform Selector Cards */}
+			<View style={styles.section}>
+				<Text style={styles.sectionHeader}>SELECT SPOOFED PLATFORM</Text>
+				<Text style={styles.sectionSubtitle}>
+					Tap any device to switch your Discord presence and Voice Chat badge:
+				</Text>
 
-			{/* Consoles Section */}
-			<ui.Section title="GAMING CONSOLES">
-				<ui.RadioRow
-					label={PLATFORMS.xbox.label}
-					subLabel={PLATFORMS.xbox.description}
-					selected={platform === 'xbox'}
-					onPress={() => handlePlatformChange('xbox')}
-				/>
-				<ui.RadioRow
-					label={PLATFORMS.ps5.label}
-					subLabel={PLATFORMS.ps5.description}
-					selected={platform === 'ps5'}
-					onPress={() => handlePlatformChange('ps5')}
-				/>
-				<ui.RadioRow
-					label={PLATFORMS.ps4.label}
-					subLabel={PLATFORMS.ps4.description}
-					selected={platform === 'ps4'}
-					onPress={() => handlePlatformChange('ps4')}
-				/>
-			</ui.Section>
+				<View style={styles.cardsGrid}>
+					{platformKeys.map((key) => {
+						const item = PLATFORMS[key];
+						const isSelected = platform === key;
 
-			{/* Desktop Section */}
-			<ui.Section title="DESKTOP & PC">
-				<ui.RadioRow
-					label={PLATFORMS.windows.label}
-					subLabel={PLATFORMS.windows.description}
-					selected={platform === 'windows'}
-					onPress={() => handlePlatformChange('windows')}
-				/>
-				<ui.RadioRow
-					label={PLATFORMS.macos.label}
-					subLabel={PLATFORMS.macos.description}
-					selected={platform === 'macos'}
-					onPress={() => handlePlatformChange('macos')}
-				/>
-				<ui.RadioRow
-					label={PLATFORMS.linux.label}
-					subLabel={PLATFORMS.linux.description}
-					selected={platform === 'linux'}
-					onPress={() => handlePlatformChange('linux')}
-				/>
-			</ui.Section>
+						return (
+							<Pressable
+								key={key}
+								style={[styles.cardItem, isSelected && styles.cardItemSelected]}
+								onPress={() => handlePlatformChange(key)}
+							>
+								<View style={styles.cardHeader}>
+									<View style={styles.cardIconWrap}>
+										<PlatformBadge platformId={key} size={20} showPill={true} />
+									</View>
+									<View style={styles.cardTextCol}>
+										<Text
+											style={[styles.cardTitle, isSelected && { color: item.color || '#23a55a' }]}
+										>
+											{item.label}
+										</Text>
+										<Text style={styles.cardCategory}>{item.category}</Text>
+									</View>
+									<View style={[styles.radioCircle, isSelected && styles.radioCircleActive]}>
+										{isSelected && <View style={styles.radioDot} />}
+									</View>
+								</View>
+								<Text style={styles.cardDesc}>{item.description}</Text>
+							</Pressable>
+						);
+					})}
+				</View>
+			</View>
 
-			{/* Browser Section */}
-			<ui.Section title="WEB BROWSERS">
-				<ui.RadioRow
-					label={PLATFORMS.web.label}
-					subLabel={PLATFORMS.web.description}
-					selected={platform === 'web'}
-					onPress={() => handlePlatformChange('web')}
-				/>
-			</ui.Section>
+			{/* Display & Voice Chat Options */}
+			<View style={styles.section}>
+				<Text style={styles.sectionHeader}>DISPLAY & VOICE CHAT OPTIONS</Text>
 
-			{/* Mobile Devices Section */}
-			<ui.Section title="MOBILE DEVICES">
-				<ui.RadioRow
-					label={PLATFORMS.android.label}
-					subLabel={PLATFORMS.android.description}
-					selected={platform === 'android'}
-					onPress={() => handlePlatformChange('android')}
-				/>
-				<ui.RadioRow
-					label={PLATFORMS.ios.label}
-					subLabel={PLATFORMS.ios.description}
-					selected={platform === 'ios'}
-					onPress={() => handlePlatformChange('ios')}
-				/>
-			</ui.Section>
-
-			{/* Disable Spoofing */}
-			<ui.Section title="RESTORE ORIGINAL">
-				<ui.RadioRow
-					label={PLATFORMS.off.label}
-					subLabel={PLATFORMS.off.description}
-					selected={platform === 'off'}
-					onPress={() => handlePlatformChange('off')}
-				/>
-			</ui.Section>
-
-			{/* Visual & Voice Chat Toggles */}
-			<ui.Section title="DISPLAY & VOICE CHAT OPTIONS">
-				<ui.SwitchRow
-					label="Voice Chat (VC) Badges"
-					subLabel="Displays your spoofed platform badge beside your name when connected to Voice Channels"
-					value={voiceSpoof}
-					onValueChange={(val: boolean) => {
-						setVoiceSpoofState(val);
-						setSetting('voiceSpoof', val);
-					}}
-				/>
-				<ui.SwitchRow
-					label="Voice Channel Join Alert"
-					subLabel="Shows a confirmation toast notifying you of your active spoofed platform upon entering VC"
-					value={vcJoinToast}
-					onValueChange={(val: boolean) => {
-						setVcJoinToastState(val);
-						setSetting('vcJoinToast', val);
-					}}
-				/>
-				<ui.SwitchRow
-					label="Member List Badge"
-					subLabel="Show platform indicator badge next to your username in server member lists"
-					value={memberListBadge}
-					onValueChange={(val: boolean) => {
-						setMemberListState(val);
-						setSetting('memberListBadge', val);
-					}}
-				/>
-				<ui.SwitchRow
-					label="User Profile Badge"
-					subLabel="Show platform badge in user profile cards"
-					value={profileBadge}
-					onValueChange={(val: boolean) => {
-						setProfileBadgeState(val);
-						setSetting('profileBadge', val);
-					}}
-				/>
-			</ui.Section>
+				{ui?.SwitchRow ? (
+					<>
+						<ui.SwitchRow
+							label="Voice Chat (VC) Badges"
+							subLabel="Displays your spoofed platform badge beside your name when connected to Voice Channels"
+							value={voiceSpoof}
+							onValueChange={(val: boolean) => {
+								setVoiceSpoofState(val);
+								setSetting('voiceSpoof', val);
+							}}
+						/>
+						<ui.SwitchRow
+							label="Voice Channel Join Alert"
+							subLabel="Shows a confirmation toast notifying you of your active spoofed platform upon entering VC"
+							value={vcJoinToast}
+							onValueChange={(val: boolean) => {
+								setVcJoinToastState(val);
+								setSetting('vcJoinToast', val);
+							}}
+						/>
+						<ui.SwitchRow
+							label="Member List Badge"
+							subLabel="Show platform indicator badge next to your username in server member lists"
+							value={memberListBadge}
+							onValueChange={(val: boolean) => {
+								setMemberListState(val);
+								setSetting('memberListBadge', val);
+							}}
+						/>
+						<ui.SwitchRow
+							label="User Profile Badge"
+							subLabel="Show platform badge in user profile cards"
+							value={profileBadge}
+							onValueChange={(val: boolean) => {
+								setProfileBadgeState(val);
+								setSetting('profileBadge', val);
+							}}
+						/>
+					</>
+				) : (
+					<Text style={styles.fallbackText}>Switches rendered via Discord settings kit.</Text>
+				)}
+			</View>
 
 			{/* Connection Diagnostics */}
-			<ui.Section title="GATEWAY DIAGNOSTICS">
-				<ui.TableRow
-					label="Socket State"
-					subLabel={socketInfo.connected ? 'Connected' : 'Connecting / Idle'}
-				/>
-				<ui.TableRow
-					label="Active Session ID"
-					subLabel={socketInfo.sessionId ?? 'None'}
-				/>
-				<ui.TableRow
-					label="Socket Interceptor"
-					subLabel={socketInfo.patched ? 'Active (Patched)' : 'Inactive'}
-				/>
-			</ui.Section>
-		</ui.Page>
+			<View style={styles.section}>
+				<Text style={styles.sectionHeader}>GATEWAY STATUS</Text>
+				<View style={styles.diagnosticsBox}>
+					<View style={styles.diagRow}>
+						<Text style={styles.diagLabel}>Connection:</Text>
+						<Text
+							style={[styles.diagValue, { color: socketInfo.connected ? '#23a55a' : '#f0b232' }]}
+						>
+							{socketInfo.connected ? '● Connected' : '○ Connecting / Standby'}
+						</Text>
+					</View>
+					<View style={styles.diagRow}>
+						<Text style={styles.diagLabel}>Session ID:</Text>
+						<Text style={styles.diagValue}>{socketInfo.sessionId ?? 'None'}</Text>
+					</View>
+					<View style={styles.diagRow}>
+						<Text style={styles.diagLabel}>Socket Hook:</Text>
+						<Text style={[styles.diagValue, { color: socketInfo.patched ? '#23a55a' : '#f23f43' }]}>
+							{socketInfo.patched ? 'Active (Patched)' : 'Inactive'}
+						</Text>
+					</View>
+					<View style={styles.diagRow}>
+						<Text style={styles.diagLabel}>Spoofed As:</Text>
+						<Text style={styles.diagValue}>{socketInfo.currentPlatform}</Text>
+					</View>
+				</View>
+			</View>
+		</PageComponent>
 	);
 }
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+		backgroundColor: '#1e1f22',
+		paddingHorizontal: 12,
+		paddingVertical: 14,
+	},
+	section: {
+		marginBottom: 20,
+	},
+	sectionHeader: {
+		fontSize: 12,
+		fontWeight: '800',
+		color: '#949ba4',
+		letterSpacing: 0.5,
+		marginBottom: 6,
+		textTransform: 'uppercase',
+	},
+	sectionSubtitle: {
+		fontSize: 13,
+		color: '#b5bac1',
+		marginBottom: 10,
+	},
+	reconnectButton: {
+		backgroundColor: '#5865f2',
+		paddingVertical: 12,
+		paddingHorizontal: 16,
+		borderRadius: 8,
+		alignItems: 'center',
+		marginTop: 8,
+	},
+	reconnectButtonText: {
+		color: '#ffffff',
+		fontSize: 14,
+		fontWeight: '700',
+	},
+	cardsGrid: {
+		gap: 8,
+	},
+	cardItem: {
+		backgroundColor: '#2b2d31',
+		borderRadius: 10,
+		padding: 12,
+		borderWidth: 1.5,
+		borderColor: '#35373c',
+	},
+	cardItemSelected: {
+		borderColor: '#5865f2',
+		backgroundColor: '#313338',
+	},
+	cardHeader: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+	},
+	cardIconWrap: {
+		marginRight: 10,
+	},
+	cardTextCol: {
+		flex: 1,
+	},
+	cardTitle: {
+		fontSize: 14,
+		fontWeight: '700',
+		color: '#f2f3f5',
+	},
+	cardCategory: {
+		fontSize: 11,
+		color: '#949ba4',
+		marginTop: 1,
+	},
+	cardDesc: {
+		fontSize: 12,
+		color: '#949ba4',
+		marginTop: 6,
+		lineHeight: 16,
+	},
+	radioCircle: {
+		width: 20,
+		height: 20,
+		borderRadius: 10,
+		borderWidth: 2,
+		borderColor: '#80848e',
+		alignItems: 'center',
+		justifyContent: 'center',
+		marginLeft: 8,
+	},
+	radioCircleActive: {
+		borderColor: '#5865f2',
+	},
+	radioDot: {
+		width: 10,
+		height: 10,
+		borderRadius: 5,
+		backgroundColor: '#5865f2',
+	},
+	fallbackText: {
+		color: '#949ba4',
+		fontSize: 13,
+	},
+	diagnosticsBox: {
+		backgroundColor: '#2b2d31',
+		borderRadius: 8,
+		padding: 12,
+		borderWidth: 1,
+		borderColor: '#35373c',
+	},
+	diagRow: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		paddingVertical: 4,
+	},
+	diagLabel: {
+		fontSize: 12,
+		color: '#949ba4',
+		fontWeight: '600',
+	},
+	diagValue: {
+		fontSize: 12,
+		color: '#dbdee1',
+		fontFamily: 'monospace',
+		fontWeight: '600',
+	},
+});

@@ -5,10 +5,10 @@
 	"authors": [
 		{
 			"name": "teenagersdieyoung",
-			"id": "100000000000000000"
+			"id": "349721444466294785"
 		}
 	],
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"type": "plugin",
 	"icon": "HeadsetIcon",
 	"main": "index.js"

@@ -462,26 +462,36 @@
     const R = typeof React !== "undefined" ? React : typeof window !== "undefined" ? window.React : null;
     return T && R ? R.createElement(T, props) : null;
   };
+  var Pressable = (props) => {
+    const P = getRN().Pressable;
+    const R = typeof React !== "undefined" ? React : typeof window !== "undefined" ? window.React : null;
+    return P && R ? R.createElement(P, props) : null;
+  };
+  var ScrollView = (props) => {
+    const S = getRN().ScrollView;
+    const R = typeof React !== "undefined" ? React : typeof window !== "undefined" ? window.React : null;
+    return S && R ? R.createElement(S, props) : null;
+  };
   var StyleSheet = {
-    create: (styles3) => {
+    create: (styles4) => {
       const rn = getRN();
       if (rn && rn.StyleSheet && typeof rn.StyleSheet.create === "function") {
         try {
-          return rn.StyleSheet.create(styles3);
+          return rn.StyleSheet.create(styles4);
         } catch {
         }
       }
-      return styles3;
+      return styles4;
     },
-    flatten: (styles3) => {
+    flatten: (styles4) => {
       const rn = getRN();
       if (rn && rn.StyleSheet && typeof rn.StyleSheet.flatten === "function") {
         try {
-          return rn.StyleSheet.flatten(styles3);
+          return rn.StyleSheet.flatten(styles4);
         } catch {
         }
       }
-      return Array.isArray(styles3) ? Object.assign({}, ...styles3.filter(Boolean)) : styles3;
+      return Array.isArray(styles4) ? Object.assign({}, ...styles4.filter(Boolean)) : styles4;
     }
   };
   var react_native_default = new Proxy({}, { get: (_, prop) => getRN()[prop] });
@@ -868,8 +878,8 @@
     const handlePlatformChange = (newPlatform) => {
       setPlatformState(newPlatform);
       setSetting("platform", newPlatform);
-      const ok = forceIdentify();
-      setTimeout(() => setSocketInfo(getSocketStatus()), 500);
+      forceIdentify();
+      setTimeout(() => setSocketInfo(getSocketStatus()), 600);
       const config = PLATFORMS[newPlatform];
       toasts.show({
         title: "Platform Updated",
@@ -878,7 +888,7 @@
     };
     const handleManualReconnect = () => {
       const success = forceIdentify();
-      setTimeout(() => setSocketInfo(getSocketStatus()), 500);
+      setTimeout(() => setSocketInfo(getSocketStatus()), 600);
       if (success) {
         toasts.show({
           title: "Gateway Reconnected",
@@ -891,103 +901,48 @@
         });
       }
     };
-    return /* @__PURE__ */ react_default.createElement(ui.Page, null, /* @__PURE__ */ react_default.createElement(ui.Section, { title: "ACTIVE SPOOF PREVIEW" }, /* @__PURE__ */ react_default.createElement(DevicePreview, { platformId: platform }), /* @__PURE__ */ react_default.createElement(
+    const platformKeys = [
+      "meta",
+      "xbox",
+      "ps5",
+      "ps4",
+      "windows",
+      "macos",
+      "linux",
+      "web",
+      "android",
+      "ios",
+      "off"
+    ];
+    const PageComponent = ui?.Page ?? ScrollView;
+    return /* @__PURE__ */ react_default.createElement(PageComponent, { style: styles3.container }, /* @__PURE__ */ react_default.createElement(View, { style: styles3.section }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.sectionHeader }, "ACTIVE SPOOF PREVIEW"), /* @__PURE__ */ react_default.createElement(DevicePreview, { platformId: platform }), ui?.ButtonRow ? /* @__PURE__ */ react_default.createElement(
       ui.ButtonRow,
       {
         label: "Force Gateway Re-Identify",
         subLabel: "Triggers immediate handshake so Voice Channels and profiles update instantly",
-        variant: "primary",
+        variant: "button",
         onPress: handleManualReconnect
       }
-    )), /* @__PURE__ */ react_default.createElement(ui.Section, { title: "VIRTUAL REALITY (VR)" }, /* @__PURE__ */ react_default.createElement(
-      ui.RadioRow,
-      {
-        label: PLATFORMS.meta.label,
-        subLabel: PLATFORMS.meta.description,
-        selected: platform === "meta",
-        onPress: () => handlePlatformChange("meta")
-      }
-    )), /* @__PURE__ */ react_default.createElement(ui.Section, { title: "GAMING CONSOLES" }, /* @__PURE__ */ react_default.createElement(
-      ui.RadioRow,
-      {
-        label: PLATFORMS.xbox.label,
-        subLabel: PLATFORMS.xbox.description,
-        selected: platform === "xbox",
-        onPress: () => handlePlatformChange("xbox")
-      }
-    ), /* @__PURE__ */ react_default.createElement(
-      ui.RadioRow,
-      {
-        label: PLATFORMS.ps5.label,
-        subLabel: PLATFORMS.ps5.description,
-        selected: platform === "ps5",
-        onPress: () => handlePlatformChange("ps5")
-      }
-    ), /* @__PURE__ */ react_default.createElement(
-      ui.RadioRow,
-      {
-        label: PLATFORMS.ps4.label,
-        subLabel: PLATFORMS.ps4.description,
-        selected: platform === "ps4",
-        onPress: () => handlePlatformChange("ps4")
-      }
-    )), /* @__PURE__ */ react_default.createElement(ui.Section, { title: "DESKTOP & PC" }, /* @__PURE__ */ react_default.createElement(
-      ui.RadioRow,
-      {
-        label: PLATFORMS.windows.label,
-        subLabel: PLATFORMS.windows.description,
-        selected: platform === "windows",
-        onPress: () => handlePlatformChange("windows")
-      }
-    ), /* @__PURE__ */ react_default.createElement(
-      ui.RadioRow,
-      {
-        label: PLATFORMS.macos.label,
-        subLabel: PLATFORMS.macos.description,
-        selected: platform === "macos",
-        onPress: () => handlePlatformChange("macos")
-      }
-    ), /* @__PURE__ */ react_default.createElement(
-      ui.RadioRow,
-      {
-        label: PLATFORMS.linux.label,
-        subLabel: PLATFORMS.linux.description,
-        selected: platform === "linux",
-        onPress: () => handlePlatformChange("linux")
-      }
-    )), /* @__PURE__ */ react_default.createElement(ui.Section, { title: "WEB BROWSERS" }, /* @__PURE__ */ react_default.createElement(
-      ui.RadioRow,
-      {
-        label: PLATFORMS.web.label,
-        subLabel: PLATFORMS.web.description,
-        selected: platform === "web",
-        onPress: () => handlePlatformChange("web")
-      }
-    )), /* @__PURE__ */ react_default.createElement(ui.Section, { title: "MOBILE DEVICES" }, /* @__PURE__ */ react_default.createElement(
-      ui.RadioRow,
-      {
-        label: PLATFORMS.android.label,
-        subLabel: PLATFORMS.android.description,
-        selected: platform === "android",
-        onPress: () => handlePlatformChange("android")
-      }
-    ), /* @__PURE__ */ react_default.createElement(
-      ui.RadioRow,
-      {
-        label: PLATFORMS.ios.label,
-        subLabel: PLATFORMS.ios.description,
-        selected: platform === "ios",
-        onPress: () => handlePlatformChange("ios")
-      }
-    )), /* @__PURE__ */ react_default.createElement(ui.Section, { title: "RESTORE ORIGINAL" }, /* @__PURE__ */ react_default.createElement(
-      ui.RadioRow,
-      {
-        label: PLATFORMS.off.label,
-        subLabel: PLATFORMS.off.description,
-        selected: platform === "off",
-        onPress: () => handlePlatformChange("off")
-      }
-    )), /* @__PURE__ */ react_default.createElement(ui.Section, { title: "DISPLAY & VOICE CHAT OPTIONS" }, /* @__PURE__ */ react_default.createElement(
+    ) : /* @__PURE__ */ react_default.createElement(Pressable, { style: styles3.reconnectButton, onPress: handleManualReconnect }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.reconnectButtonText }, "\u26A1 Force Gateway Re-Identify"))), /* @__PURE__ */ react_default.createElement(View, { style: styles3.section }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.sectionHeader }, "SELECT SPOOFED PLATFORM"), /* @__PURE__ */ react_default.createElement(Text, { style: styles3.sectionSubtitle }, "Tap any device to switch your Discord presence and Voice Chat badge:"), /* @__PURE__ */ react_default.createElement(View, { style: styles3.cardsGrid }, platformKeys.map((key) => {
+      const item = PLATFORMS[key];
+      const isSelected = platform === key;
+      return /* @__PURE__ */ react_default.createElement(
+        Pressable,
+        {
+          key,
+          style: [styles3.cardItem, isSelected && styles3.cardItemSelected],
+          onPress: () => handlePlatformChange(key)
+        },
+        /* @__PURE__ */ react_default.createElement(View, { style: styles3.cardHeader }, /* @__PURE__ */ react_default.createElement(View, { style: styles3.cardIconWrap }, /* @__PURE__ */ react_default.createElement(PlatformBadge, { platformId: key, size: 20, showPill: true })), /* @__PURE__ */ react_default.createElement(View, { style: styles3.cardTextCol }, /* @__PURE__ */ react_default.createElement(
+          Text,
+          {
+            style: [styles3.cardTitle, isSelected && { color: item.color || "#23a55a" }]
+          },
+          item.label
+        ), /* @__PURE__ */ react_default.createElement(Text, { style: styles3.cardCategory }, item.category)), /* @__PURE__ */ react_default.createElement(View, { style: [styles3.radioCircle, isSelected && styles3.radioCircleActive] }, isSelected && /* @__PURE__ */ react_default.createElement(View, { style: styles3.radioDot }))),
+        /* @__PURE__ */ react_default.createElement(Text, { style: styles3.cardDesc }, item.description)
+      );
+    }))), /* @__PURE__ */ react_default.createElement(View, { style: styles3.section }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.sectionHeader }, "DISPLAY & VOICE CHAT OPTIONS"), ui?.SwitchRow ? /* @__PURE__ */ react_default.createElement(react_default.Fragment, null, /* @__PURE__ */ react_default.createElement(
       ui.SwitchRow,
       {
         label: "Voice Chat (VC) Badges",
@@ -1031,26 +986,139 @@
           setSetting("profileBadge", val);
         }
       }
-    )), /* @__PURE__ */ react_default.createElement(ui.Section, { title: "GATEWAY DIAGNOSTICS" }, /* @__PURE__ */ react_default.createElement(
-      ui.TableRow,
+    )) : /* @__PURE__ */ react_default.createElement(Text, { style: styles3.fallbackText }, "Switches rendered via Discord settings kit.")), /* @__PURE__ */ react_default.createElement(View, { style: styles3.section }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.sectionHeader }, "GATEWAY STATUS"), /* @__PURE__ */ react_default.createElement(View, { style: styles3.diagnosticsBox }, /* @__PURE__ */ react_default.createElement(View, { style: styles3.diagRow }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.diagLabel }, "Connection:"), /* @__PURE__ */ react_default.createElement(
+      Text,
       {
-        label: "Socket State",
-        subLabel: socketInfo.connected ? "Connected" : "Connecting / Idle"
-      }
-    ), /* @__PURE__ */ react_default.createElement(
-      ui.TableRow,
-      {
-        label: "Active Session ID",
-        subLabel: socketInfo.sessionId ?? "None"
-      }
-    ), /* @__PURE__ */ react_default.createElement(
-      ui.TableRow,
-      {
-        label: "Socket Interceptor",
-        subLabel: socketInfo.patched ? "Active (Patched)" : "Inactive"
-      }
-    )));
+        style: [styles3.diagValue, { color: socketInfo.connected ? "#23a55a" : "#f0b232" }]
+      },
+      socketInfo.connected ? "\u25CF Connected" : "\u25CB Connecting / Standby"
+    )), /* @__PURE__ */ react_default.createElement(View, { style: styles3.diagRow }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.diagLabel }, "Session ID:"), /* @__PURE__ */ react_default.createElement(Text, { style: styles3.diagValue }, socketInfo.sessionId ?? "None")), /* @__PURE__ */ react_default.createElement(View, { style: styles3.diagRow }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.diagLabel }, "Socket Hook:"), /* @__PURE__ */ react_default.createElement(Text, { style: [styles3.diagValue, { color: socketInfo.patched ? "#23a55a" : "#f23f43" }] }, socketInfo.patched ? "Active (Patched)" : "Inactive")), /* @__PURE__ */ react_default.createElement(View, { style: styles3.diagRow }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.diagLabel }, "Spoofed As:"), /* @__PURE__ */ react_default.createElement(Text, { style: styles3.diagValue }, socketInfo.currentPlatform)))));
   }
+  var styles3 = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: "#1e1f22",
+      paddingHorizontal: 12,
+      paddingVertical: 14
+    },
+    section: {
+      marginBottom: 20
+    },
+    sectionHeader: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: "#949ba4",
+      letterSpacing: 0.5,
+      marginBottom: 6,
+      textTransform: "uppercase"
+    },
+    sectionSubtitle: {
+      fontSize: 13,
+      color: "#b5bac1",
+      marginBottom: 10
+    },
+    reconnectButton: {
+      backgroundColor: "#5865f2",
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      alignItems: "center",
+      marginTop: 8
+    },
+    reconnectButtonText: {
+      color: "#ffffff",
+      fontSize: 14,
+      fontWeight: "700"
+    },
+    cardsGrid: {
+      gap: 8
+    },
+    cardItem: {
+      backgroundColor: "#2b2d31",
+      borderRadius: 10,
+      padding: 12,
+      borderWidth: 1.5,
+      borderColor: "#35373c"
+    },
+    cardItemSelected: {
+      borderColor: "#5865f2",
+      backgroundColor: "#313338"
+    },
+    cardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between"
+    },
+    cardIconWrap: {
+      marginRight: 10
+    },
+    cardTextCol: {
+      flex: 1
+    },
+    cardTitle: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: "#f2f3f5"
+    },
+    cardCategory: {
+      fontSize: 11,
+      color: "#949ba4",
+      marginTop: 1
+    },
+    cardDesc: {
+      fontSize: 12,
+      color: "#949ba4",
+      marginTop: 6,
+      lineHeight: 16
+    },
+    radioCircle: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: "#80848e",
+      alignItems: "center",
+      justifyContent: "center",
+      marginLeft: 8
+    },
+    radioCircleActive: {
+      borderColor: "#5865f2"
+    },
+    radioDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: "#5865f2"
+    },
+    fallbackText: {
+      color: "#949ba4",
+      fontSize: 13
+    },
+    diagnosticsBox: {
+      backgroundColor: "#2b2d31",
+      borderRadius: 8,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: "#35373c"
+    },
+    diagRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 4
+    },
+    diagLabel: {
+      fontSize: 12,
+      color: "#949ba4",
+      fontWeight: "600"
+    },
+    diagValue: {
+      fontSize: 12,
+      color: "#dbdee1",
+      fontFamily: "monospace",
+      fontWeight: "600"
+    }
+  });
 
   // src/index.tsx
   function start() {
