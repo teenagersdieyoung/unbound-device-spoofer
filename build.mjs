@@ -52,6 +52,7 @@ const shimsPlugin = {
 				export const useRef = (...args) => getR().useRef?.(...args);
 				export const cloneElement = (...args) => getR().cloneElement?.(...args);
 				export const createElement = (...args) => getR().createElement?.(...args);
+				export const Component = getR().Component || class {};
 				export default new Proxy({}, { get: (_, prop) => getR()[prop] });
 			`,
 		}));
@@ -72,41 +73,39 @@ const shimsPlugin = {
 					}
 					return {};
 				};
+				const getReact = () => {
+					if (typeof React !== 'undefined' && React) return React;
+					if (typeof globalThis !== 'undefined' && globalThis.React) return globalThis.React;
+					if (typeof window !== 'undefined' && window.React) return window.React;
+					return null;
+				};
 				export const View = (props) => {
-					const V = getRN().View;
-					const R = typeof React !== 'undefined' ? React : (typeof window !== 'undefined' ? window.React : null);
-					return V && R ? R.createElement(V, props) : null;
+					const rn = getRN();
+					const r = getReact();
+					const Comp = rn.View;
+					return Comp && r ? r.createElement(Comp, props) : (props?.children ?? null);
 				};
 				export const Text = (props) => {
-					const T = getRN().Text;
-					const R = typeof React !== 'undefined' ? React : (typeof window !== 'undefined' ? window.React : null);
-					return T && R ? R.createElement(T, props) : null;
+					const rn = getRN();
+					const r = getReact();
+					const Comp = rn.Text;
+					return Comp && r ? r.createElement(Comp, props) : (props?.children ?? null);
 				};
 				export const Pressable = (props) => {
-					const P = getRN().Pressable;
-					const R = typeof React !== 'undefined' ? React : (typeof window !== 'undefined' ? window.React : null);
-					return P && R ? R.createElement(P, props) : null;
+					const rn = getRN();
+					const r = getReact();
+					const Comp = rn.Pressable;
+					return Comp && r ? r.createElement(Comp, props) : (props?.children ?? null);
 				};
 				export const ScrollView = (props) => {
-					const S = getRN().ScrollView;
-					const R = typeof React !== 'undefined' ? React : (typeof window !== 'undefined' ? window.React : null);
-					return S && R ? R.createElement(S, props) : null;
+					const rn = getRN();
+					const r = getReact();
+					const Comp = rn.ScrollView;
+					return Comp && r ? r.createElement(Comp, props) : (props?.children ?? null);
 				};
 				export const StyleSheet = {
-					create: (styles) => {
-						const rn = getRN();
-						if (rn && rn.StyleSheet && typeof rn.StyleSheet.create === 'function') {
-							try { return rn.StyleSheet.create(styles); } catch {}
-						}
-						return styles;
-					},
-					flatten: (styles) => {
-						const rn = getRN();
-						if (rn && rn.StyleSheet && typeof rn.StyleSheet.flatten === 'function') {
-							try { return rn.StyleSheet.flatten(styles); } catch {}
-						}
-						return Array.isArray(styles) ? Object.assign({}, ...styles.filter(Boolean)) : styles;
-					}
+					create: (s) => s,
+					flatten: (s) => (Array.isArray(s) ? Object.assign({}, ...s.filter(Boolean)) : s)
 				};
 				export default new Proxy({}, { get: (_, prop) => getRN()[prop] });
 			`,

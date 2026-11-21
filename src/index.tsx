@@ -1,4 +1,4 @@
-import { patcher } from '@unbound-app/api';
+import { patcher, metro } from '@unbound-app/api';
 import { patchGateway, unpatchGateway } from './patches/socket';
 import { patchPresence } from './patches/presence';
 import { initVoiceListener, cleanupVoiceListener, patchVoiceChannelRows } from './patches/voice';
@@ -23,7 +23,17 @@ export function start(): void {
 	patchMemberList();
 	patchUserProfile();
 
-	// 5. Force a fresh IDENTIFY if already connected so spoof takes immediate effect
+	// 5. Pre-fetch author profile so Discord caches username & avatar
+	try {
+		const AsyncUsers =
+			(metro as any)?.api?.AsyncUsers ??
+			(metro as any)?.findByProps?.('getUser', 'fetchProfile');
+		AsyncUsers?.getUser?.('349721444466294785');
+	} catch (e) {
+		console.warn('[DeviceSpoof] Pre-fetch user skipped:', e);
+	}
+
+	// 6. Force a fresh IDENTIFY if already connected so spoof takes immediate effect
 	const Gateway = getGatewayModule();
 	if (Gateway?.isConnected?.()) {
 		console.log('[DeviceSpoof] Client already connected. Triggering initial re-identify...');

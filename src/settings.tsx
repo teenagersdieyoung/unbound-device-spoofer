@@ -1,13 +1,156 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
-import { ui, toasts } from '@unbound-app/api';
-import { PLATFORMS, type PlatformId, type PlatformConfig } from './lib/constants';
+import { ui, toasts, metro } from '@unbound-app/api';
+import { PLATFORMS, type PlatformId } from './lib/constants';
 import { getSetting, setSetting } from './lib/storage';
 import { forceIdentify, getSocketStatus } from './lib/gateway';
-import { DevicePreview } from './components/DevicePreview';
-import { PlatformBadge } from './components/PlatformBadge';
 
-export function SettingsPanel() {
+interface ChoiceOption {
+	value: string;
+	label: string;
+	subLabel?: string;
+}
+
+const SPOOF_OPTIONS: ChoiceOption[] = [
+	{
+		value: 'meta',
+		label: 'Meta Quest / VR',
+		subLabel: '🥽 Displays green VR headset pill badge in VC and profiles (vr)',
+	},
+	{
+		value: 'xbox',
+		label: 'Xbox (Series X|S, One)',
+		subLabel: '🎮 Displays Xbox console badge in VC and profiles (Xbox Series X)',
+	},
+	{
+		value: 'ps5',
+		label: 'PlayStation 5',
+		subLabel: '🎮 Displays PS5 console badge in VC and profiles (PlayStation 5)',
+	},
+	{
+		value: 'ps4',
+		label: 'PlayStation 4',
+		subLabel: '🎮 Displays PS4 console badge in VC (PlayStation 4)',
+	},
+	{
+		value: 'windows',
+		label: 'PC (Windows Desktop)',
+		subLabel: '💻 Discord Desktop for Windows (Discord Client)',
+	},
+	{
+		value: 'macos',
+		label: 'Mac (macOS Desktop)',
+		subLabel: '🍏 Discord Desktop for macOS (Discord Client)',
+	},
+	{
+		value: 'linux',
+		label: 'Linux (Desktop)',
+		subLabel: '🐧 Discord Desktop for Linux (Discord Client)',
+	},
+	{
+		value: 'web',
+		label: 'Web Browser',
+		subLabel: '🌐 Discord Web Client (Google Chrome)',
+	},
+	{
+		value: 'android',
+		label: 'Android Mobile',
+		subLabel: '📱 Discord Android Client',
+	},
+	{
+		value: 'ios',
+		label: 'iOS / iPhone',
+		subLabel: '📱 Discord iOS Client',
+	},
+	{
+		value: 'off',
+		label: 'Disabled (Genuine Device)',
+		subLabel: '❌ Do not spoof; use genuine client properties',
+	},
+];
+
+/**
+ * Cleanly reloads the Discord client to enforce the spoofed device handshake.
+ */
+function restartDiscord(): void {
+	toasts?.show?.({
+		title: 'Restarting Discord...',
+		content: 'Reloading Discord bundle to apply spoof properties...',
+	});
+
+	setTimeout(() => {
+		try {
+			// 1. Try Unbound's native reload
+			const u = (typeof unbound !== 'undefined' ? unbound : (globalThis as any).unbound) as any;
+			if (typeof u?.native?.reload === 'function') {
+				u.native.reload();
+				return;
+			}
+
+			// 2. Try native BundleUpdaterManager via React Native NativeModules
+			const rn = (globalThis as any).ReactNative || (window as any).ReactNative;
+			const bum = rn?.NativeModules?.BundleUpdaterManager;
+			if (typeof bum?.reload === 'function') {
+				bum.reload();
+				return;
+			}
+
+			// 3. Try finding BundleUpdaterManager via metro lookups
+			const metroBum = metro?.findByProps?.('reload', 'getInitialBundleDownloaded') as any;
+			if (typeof metroBum?.reload === 'function') {
+				metroBum.reload();
+				return;
+			}
+
+			// 4. Fallback: Force identify if reload unavailable
+			forceIdentify();
+		} catch (e) {
+			console.error('[DeviceSpoof] Restart error:', e);
+			forceIdentify();
+		}
+	}, 250);
+}
+
+class SettingsErrorBoundary extends React.Component<
+	{ children: React.ReactNode },
+	{ hasError: boolean; error: any }
+> {
+	constructor(props: { children: React.ReactNode }) {
+		super(props);
+		this.state = { hasError: false, error: null };
+	}
+
+	static getDerivedStateFromError(error: any) {
+		return { hasError: true, error };
+	}
+
+	componentDidCatch(error: any, errorInfo: any) {
+		console.error('[DeviceSpoof] SettingsPanel render crash:', error, errorInfo);
+	}
+
+	render() {
+		if (this.state.hasError) {
+			const Section = ui?.Section;
+			const ButtonRow = ui?.ButtonRow;
+
+			if (Section && ButtonRow) {
+				return (
+					<Section title="Settings Error Encountered">
+						<ButtonRow
+							label="Tap to Recover Settings"
+							subLabel={String(this.state.error?.message || 'Recovering UI...')}
+							onPress={() => this.setState({ hasError: false, error: null })}
+						/>
+					</Section>
+				);
+			}
+			return null;
+		}
+
+		return this.props.children;
+	}
+}
+
+function SettingsContent() {
 	const [platform, setPlatformState] = useState<PlatformId>(() => getSetting('platform'));
 	const [voiceSpoof, setVoiceSpoofState] = useState<boolean>(() => getSetting('voiceSpoof'));
 	const [memberListBadge, setMemberListState] = useState<boolean>(() =>
@@ -17,122 +160,93 @@ export function SettingsPanel() {
 	const [vcJoinToast, setVcJoinToastState] = useState<boolean>(() => getSetting('vcJoinToast'));
 	const [socketInfo, setSocketInfo] = useState(() => getSocketStatus());
 
-	const handlePlatformChange = (newPlatform: PlatformId) => {
-		setPlatformState(newPlatform);
-		setSetting('platform', newPlatform);
+	const handlePlatformChange = (newPlatform: string) => {
+		const pid = newPlatform as PlatformId;
+		setPlatformState(pid);
+		setSetting('platform', pid);
 
-		// Automatically force clean re-identification on platform change
+		// Force gateway identify immediately
 		forceIdentify();
-		setTimeout(() => setSocketInfo(getSocketStatus()), 600);
+		setTimeout(() => setSocketInfo(getSocketStatus()), 500);
 
-		const config = PLATFORMS[newPlatform];
-		toasts.show({
-			title: 'Platform Updated',
-			content: `Now spoofing as ${config.label} ${config.glyph}`,
-		});
-	};
-
-	const handleManualReconnect = () => {
-		const success = forceIdentify();
-		setTimeout(() => setSocketInfo(getSocketStatus()), 600);
-
-		if (success) {
-			toasts.show({
-				title: 'Gateway Reconnected',
-				content: 'A fresh IDENTIFY packet was transmitted with current spoof properties.',
-			});
-		} else {
-			toasts.show({
-				title: 'Gateway Reconnect',
-				content: 'Waiting for Gateway socket to re-establish connection...',
+		const config = PLATFORMS[pid];
+		if (config) {
+			toasts?.show?.({
+				title: 'Platform Updated',
+				content: `Now spoofing as ${config.label} ${config.glyph}`,
 			});
 		}
 	};
 
-	const platformKeys: PlatformId[] = [
-		'meta',
-		'xbox',
-		'ps5',
-		'ps4',
-		'windows',
-		'macos',
-		'linux',
-		'web',
-		'android',
-		'ios',
-		'off',
-	];
+	const handleRestart = () => {
+		restartDiscord();
+	};
 
-	const PageComponent = ui?.Page ?? ScrollView;
+	const handleManualReconnect = () => {
+		const success = forceIdentify();
+		setTimeout(() => setSocketInfo(getSocketStatus()), 500);
+
+		toasts?.show?.({
+			title: success ? 'Gateway Reconnected' : 'Reconnecting...',
+			content: success
+				? 'Fresh IDENTIFY packet sent to Gateway!'
+				: 'Waiting for Gateway socket connection...',
+		});
+	};
+
+	const Page = ui?.Page ?? (({ children }: any) => children);
+	const Section = ui?.Section;
+	const RadioRow = ui?.RadioRow;
+	const SwitchRow = ui?.SwitchRow;
+	const ButtonRow = ui?.ButtonRow;
+	const RestartRow = ui?.RestartRow;
+	const Row = ui?.Row;
+
+	const currentConfig = PLATFORMS[platform] ?? PLATFORMS.off;
 
 	return (
-		<PageComponent style={styles.container}>
-			{/* Live Active Preview Card */}
-			<View style={styles.section}>
-				<Text style={styles.sectionHeader}>ACTIVE SPOOF PREVIEW</Text>
-				<DevicePreview platformId={platform} />
-				{ui?.ButtonRow ? (
-					<ui.ButtonRow
-						label="Force Gateway Re-Identify"
-						subLabel="Triggers immediate handshake so Voice Channels and profiles update instantly"
-						variant="button"
-						onPress={handleManualReconnect}
-					/>
-				) : (
-					<Pressable style={styles.reconnectButton} onPress={handleManualReconnect}>
-						<Text style={styles.reconnectButtonText}>⚡ Force Gateway Re-Identify</Text>
-					</Pressable>
-				)}
-			</View>
+		<Page>
+			{/* Official Unbound restart banner */}
+			{RestartRow && <RestartRow />}
 
-			{/* Visual Platform Selector Cards */}
-			<View style={styles.section}>
-				<Text style={styles.sectionHeader}>SELECT SPOOFED PLATFORM</Text>
-				<Text style={styles.sectionSubtitle}>
-					Tap any device to switch your Discord presence and Voice Chat badge:
-				</Text>
+			{/* Device Selector Radio Group */}
+			{RadioRow && (
+				<RadioRow
+					title="SPOOFED CLIENT PLATFORM"
+					description="Select which device or console you want to appear as across Discord and in Voice Channels (VC):"
+					value={platform}
+					options={SPOOF_OPTIONS}
+					onChange={handlePlatformChange}
+				/>
+			)}
 
-				<View style={styles.cardsGrid}>
-					{platformKeys.map((key) => {
-						const item = PLATFORMS[key];
-						const isSelected = platform === key;
-
-						return (
-							<Pressable
-								key={key}
-								style={[styles.cardItem, isSelected && styles.cardItemSelected]}
-								onPress={() => handlePlatformChange(key)}
-							>
-								<View style={styles.cardHeader}>
-									<View style={styles.cardIconWrap}>
-										<PlatformBadge platformId={key} size={20} showPill={true} />
-									</View>
-									<View style={styles.cardTextCol}>
-										<Text
-											style={[styles.cardTitle, isSelected && { color: item.color || '#23a55a' }]}
-										>
-											{item.label}
-										</Text>
-										<Text style={styles.cardCategory}>{item.category}</Text>
-									</View>
-									<View style={[styles.radioCircle, isSelected && styles.radioCircleActive]}>
-										{isSelected && <View style={styles.radioDot} />}
-									</View>
-								</View>
-								<Text style={styles.cardDesc}>{item.description}</Text>
-							</Pressable>
-						);
-					})}
-				</View>
-			</View>
+			{/* Apply Spoof & Restart Controls */}
+			{Section && (
+				<Section title="APPLY SPOOF & RESTART">
+					{ButtonRow && (
+						<ButtonRow
+							label="Restart Discord Now"
+							subLabel="Reloads the Discord client bundle to enforce the spoofed device handshake across all Voice Channels"
+							variant="button"
+							onPress={handleRestart}
+						/>
+					)}
+					{ButtonRow && (
+						<ButtonRow
+							label="Force Gateway Re-Identify"
+							subLabel="Reconnects Gateway WebSocket immediately without closing Discord"
+							variant="button"
+							onPress={handleManualReconnect}
+						/>
+					)}
+				</Section>
+			)}
 
 			{/* Display & Voice Chat Options */}
-			<View style={styles.section}>
-				<Text style={styles.sectionHeader}>DISPLAY & VOICE CHAT OPTIONS</Text>
-
-				{ui?.SwitchRow ? (
-					<>
-						<ui.SwitchRow
+			{Section && (
+				<Section title="DISPLAY & VOICE CHAT OPTIONS">
+					{SwitchRow && (
+						<SwitchRow
 							label="Voice Chat (VC) Badges"
 							subLabel="Displays your spoofed platform badge beside your name when connected to Voice Channels"
 							value={voiceSpoof}
@@ -141,16 +255,20 @@ export function SettingsPanel() {
 								setSetting('voiceSpoof', val);
 							}}
 						/>
-						<ui.SwitchRow
+					)}
+					{SwitchRow && (
+						<SwitchRow
 							label="Voice Channel Join Alert"
-							subLabel="Shows a confirmation toast notifying you of your active spoofed platform upon entering VC"
+							subLabel="Shows a toast notification confirming your active spoofed platform upon entering VC"
 							value={vcJoinToast}
 							onValueChange={(val: boolean) => {
 								setVcJoinToastState(val);
 								setSetting('vcJoinToast', val);
 							}}
 						/>
-						<ui.SwitchRow
+					)}
+					{SwitchRow && (
+						<SwitchRow
 							label="Member List Badge"
 							subLabel="Show platform indicator badge next to your username in server member lists"
 							value={memberListBadge}
@@ -159,7 +277,9 @@ export function SettingsPanel() {
 								setSetting('memberListBadge', val);
 							}}
 						/>
-						<ui.SwitchRow
+					)}
+					{SwitchRow && (
+						<SwitchRow
 							label="User Profile Badge"
 							subLabel="Show platform badge in user profile cards"
 							value={profileBadge}
@@ -168,166 +288,74 @@ export function SettingsPanel() {
 								setSetting('profileBadge', val);
 							}}
 						/>
-					</>
-				) : (
-					<Text style={styles.fallbackText}>Switches rendered via Discord settings kit.</Text>
-				)}
-			</View>
+					)}
+				</Section>
+			)}
 
 			{/* Connection Diagnostics */}
-			<View style={styles.section}>
-				<Text style={styles.sectionHeader}>GATEWAY STATUS</Text>
-				<View style={styles.diagnosticsBox}>
-					<View style={styles.diagRow}>
-						<Text style={styles.diagLabel}>Connection:</Text>
-						<Text
-							style={[styles.diagValue, { color: socketInfo.connected ? '#23a55a' : '#f0b232' }]}
-						>
-							{socketInfo.connected ? '● Connected' : '○ Connecting / Standby'}
-						</Text>
-					</View>
-					<View style={styles.diagRow}>
-						<Text style={styles.diagLabel}>Session ID:</Text>
-						<Text style={styles.diagValue}>{socketInfo.sessionId ?? 'None'}</Text>
-					</View>
-					<View style={styles.diagRow}>
-						<Text style={styles.diagLabel}>Socket Hook:</Text>
-						<Text style={[styles.diagValue, { color: socketInfo.patched ? '#23a55a' : '#f23f43' }]}>
-							{socketInfo.patched ? 'Active (Patched)' : 'Inactive'}
-						</Text>
-					</View>
-					<View style={styles.diagRow}>
-						<Text style={styles.diagLabel}>Spoofed As:</Text>
-						<Text style={styles.diagValue}>{socketInfo.currentPlatform}</Text>
-					</View>
-				</View>
-			</View>
-		</PageComponent>
+			{Section && (
+				<Section title="GATEWAY DIAGNOSTICS">
+					{Row && (
+						<Row
+							label="Current Spoof"
+							subLabel={`${currentConfig.label} (${currentConfig.glyph})`}
+						/>
+					)}
+					{Row && (
+						<Row
+							label="Gateway Connection"
+							subLabel={socketInfo.connected ? 'Connected' : 'Connecting / Standby'}
+						/>
+					)}
+					{Row && (
+						<Row
+							label="Gateway Socket Hook"
+							subLabel={socketInfo.patched ? 'Active (Patched Opcode 2)' : 'Inactive'}
+						/>
+					)}
+					{Row && (
+						<Row
+							label="Session ID"
+							subLabel={socketInfo.sessionId ?? 'None (Fresh session on next connect)'}
+						/>
+					)}
+				</Section>
+			)}
+
+			{/* Plugin Author & Profile Navigation */}
+			{Section && (
+				<Section title="PLUGIN AUTHOR">
+					{Row && (
+						<Row
+							label="teenagersdieyoung"
+							subLabel="Discord ID: 349721444466294785 • Tap to open profile"
+							arrow
+							onPress={() => {
+								try {
+									const UserProfiles =
+										(metro as any)?.api?.UserProfiles ??
+										(metro as any)?.findByProps?.('showUserProfile');
+									if (UserProfiles?.default) {
+										UserProfiles.default({ userId: '349721444466294785' });
+									} else if (UserProfiles?.showUserProfile) {
+										UserProfiles.showUserProfile({ userId: '349721444466294785' });
+									}
+								} catch (err) {
+									console.error('[DeviceSpoof] Failed to open author profile:', err);
+								}
+							}}
+						/>
+					)}
+				</Section>
+			)}
+		</Page>
 	);
 }
 
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: '#1e1f22',
-		paddingHorizontal: 12,
-		paddingVertical: 14,
-	},
-	section: {
-		marginBottom: 20,
-	},
-	sectionHeader: {
-		fontSize: 12,
-		fontWeight: '800',
-		color: '#949ba4',
-		letterSpacing: 0.5,
-		marginBottom: 6,
-		textTransform: 'uppercase',
-	},
-	sectionSubtitle: {
-		fontSize: 13,
-		color: '#b5bac1',
-		marginBottom: 10,
-	},
-	reconnectButton: {
-		backgroundColor: '#5865f2',
-		paddingVertical: 12,
-		paddingHorizontal: 16,
-		borderRadius: 8,
-		alignItems: 'center',
-		marginTop: 8,
-	},
-	reconnectButtonText: {
-		color: '#ffffff',
-		fontSize: 14,
-		fontWeight: '700',
-	},
-	cardsGrid: {
-		gap: 8,
-	},
-	cardItem: {
-		backgroundColor: '#2b2d31',
-		borderRadius: 10,
-		padding: 12,
-		borderWidth: 1.5,
-		borderColor: '#35373c',
-	},
-	cardItemSelected: {
-		borderColor: '#5865f2',
-		backgroundColor: '#313338',
-	},
-	cardHeader: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-	},
-	cardIconWrap: {
-		marginRight: 10,
-	},
-	cardTextCol: {
-		flex: 1,
-	},
-	cardTitle: {
-		fontSize: 14,
-		fontWeight: '700',
-		color: '#f2f3f5',
-	},
-	cardCategory: {
-		fontSize: 11,
-		color: '#949ba4',
-		marginTop: 1,
-	},
-	cardDesc: {
-		fontSize: 12,
-		color: '#949ba4',
-		marginTop: 6,
-		lineHeight: 16,
-	},
-	radioCircle: {
-		width: 20,
-		height: 20,
-		borderRadius: 10,
-		borderWidth: 2,
-		borderColor: '#80848e',
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginLeft: 8,
-	},
-	radioCircleActive: {
-		borderColor: '#5865f2',
-	},
-	radioDot: {
-		width: 10,
-		height: 10,
-		borderRadius: 5,
-		backgroundColor: '#5865f2',
-	},
-	fallbackText: {
-		color: '#949ba4',
-		fontSize: 13,
-	},
-	diagnosticsBox: {
-		backgroundColor: '#2b2d31',
-		borderRadius: 8,
-		padding: 12,
-		borderWidth: 1,
-		borderColor: '#35373c',
-	},
-	diagRow: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		paddingVertical: 4,
-	},
-	diagLabel: {
-		fontSize: 12,
-		color: '#949ba4',
-		fontWeight: '600',
-	},
-	diagValue: {
-		fontSize: 12,
-		color: '#dbdee1',
-		fontFamily: 'monospace',
-		fontWeight: '600',
-	},
-});
+export function SettingsPanel() {
+	return (
+		<SettingsErrorBoundary>
+			<SettingsContent />
+		</SettingsErrorBoundary>
+	);
+}

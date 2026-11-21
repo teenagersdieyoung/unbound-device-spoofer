@@ -8,7 +8,7 @@
 			"id": "349721444466294785"
 		}
 	],
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"type": "plugin",
 	"icon": "HeadsetIcon",
 	"main": "index.js"

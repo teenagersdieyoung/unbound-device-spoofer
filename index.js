@@ -439,6 +439,8 @@
   };
   var useState = (...args) => getR().useState?.(...args);
   var cloneElement = (...args) => getR().cloneElement?.(...args);
+  var Component = getR().Component || class {
+  };
   var react_default = new Proxy({}, { get: (_, prop) => getR()[prop] });
 
   // rn-shim:react-native
@@ -452,47 +454,27 @@
     }
     return {};
   };
+  var getReact = () => {
+    if (typeof React !== "undefined" && React) return React;
+    if (typeof globalThis !== "undefined" && globalThis.React) return globalThis.React;
+    if (typeof window !== "undefined" && window.React) return window.React;
+    return null;
+  };
   var View = (props) => {
-    const V = getRN().View;
-    const R = typeof React !== "undefined" ? React : typeof window !== "undefined" ? window.React : null;
-    return V && R ? R.createElement(V, props) : null;
+    const rn = getRN();
+    const r = getReact();
+    const Comp = rn.View;
+    return Comp && r ? r.createElement(Comp, props) : props?.children ?? null;
   };
   var Text = (props) => {
-    const T = getRN().Text;
-    const R = typeof React !== "undefined" ? React : typeof window !== "undefined" ? window.React : null;
-    return T && R ? R.createElement(T, props) : null;
-  };
-  var Pressable = (props) => {
-    const P = getRN().Pressable;
-    const R = typeof React !== "undefined" ? React : typeof window !== "undefined" ? window.React : null;
-    return P && R ? R.createElement(P, props) : null;
-  };
-  var ScrollView = (props) => {
-    const S = getRN().ScrollView;
-    const R = typeof React !== "undefined" ? React : typeof window !== "undefined" ? window.React : null;
-    return S && R ? R.createElement(S, props) : null;
+    const rn = getRN();
+    const r = getReact();
+    const Comp = rn.Text;
+    return Comp && r ? r.createElement(Comp, props) : props?.children ?? null;
   };
   var StyleSheet = {
-    create: (styles4) => {
-      const rn = getRN();
-      if (rn && rn.StyleSheet && typeof rn.StyleSheet.create === "function") {
-        try {
-          return rn.StyleSheet.create(styles4);
-        } catch {
-        }
-      }
-      return styles4;
-    },
-    flatten: (styles4) => {
-      const rn = getRN();
-      if (rn && rn.StyleSheet && typeof rn.StyleSheet.flatten === "function") {
-        try {
-          return rn.StyleSheet.flatten(styles4);
-        } catch {
-        }
-      }
-      return Array.isArray(styles4) ? Object.assign({}, ...styles4.filter(Boolean)) : styles4;
-    }
+    create: (s) => s,
+    flatten: (s) => Array.isArray(s) ? Object.assign({}, ...s.filter(Boolean)) : s
   };
   var react_native_default = new Proxy({}, { get: (_, prop) => getRN()[prop] });
 
@@ -745,128 +727,125 @@
     }
   }
 
-  // src/components/DevicePreview.tsx
-  function DevicePreview({ platformId }) {
-    const config = PLATFORMS[platformId] ?? PLATFORMS.off;
-    const isEnabled = platformId !== "off";
-    return /* @__PURE__ */ react_default.createElement(View, { style: styles2.card }, /* @__PURE__ */ react_default.createElement(View, { style: styles2.header }, /* @__PURE__ */ react_default.createElement(Text, { style: styles2.headerTitle }, "ACTIVE PREVIEW"), /* @__PURE__ */ react_default.createElement(View, { style: [styles2.statusTag, isEnabled ? styles2.statusActive : styles2.statusDisabled] }, /* @__PURE__ */ react_default.createElement(Text, { style: styles2.statusTagText }, isEnabled ? "SPOOF ACTIVE" : "OFF"))), /* @__PURE__ */ react_default.createElement(View, { style: styles2.previewBox }, /* @__PURE__ */ react_default.createElement(View, { style: styles2.avatarMock }, /* @__PURE__ */ react_default.createElement(Text, { style: styles2.avatarLetter }, "U"), /* @__PURE__ */ react_default.createElement(View, { style: styles2.badgeOverlay }, /* @__PURE__ */ react_default.createElement(PlatformBadge, { platformId, size: 16, showPill: true }))), /* @__PURE__ */ react_default.createElement(View, { style: styles2.infoCol }, /* @__PURE__ */ react_default.createElement(View, { style: styles2.onlineBadge }, /* @__PURE__ */ react_default.createElement(View, { style: [styles2.onlineDot, { backgroundColor: config.color }] }), /* @__PURE__ */ react_default.createElement(Text, { style: styles2.onlineText }, "Online")), /* @__PURE__ */ react_default.createElement(Text, { style: styles2.deviceName }, config.label), /* @__PURE__ */ react_default.createElement(Text, { style: styles2.deviceCategory }, config.category, " \u2022 Voice Chat & Gateway"))), config.properties && /* @__PURE__ */ react_default.createElement(View, { style: styles2.payloadDetails }, /* @__PURE__ */ react_default.createElement(Text, { style: styles2.payloadText }, /* @__PURE__ */ react_default.createElement(Text, { style: styles2.payloadKey }, "Client: "), config.properties.browser), /* @__PURE__ */ react_default.createElement(Text, { style: styles2.payloadText }, /* @__PURE__ */ react_default.createElement(Text, { style: styles2.payloadKey }, "OS: "), config.properties.os), /* @__PURE__ */ react_default.createElement(Text, { style: styles2.payloadText }, /* @__PURE__ */ react_default.createElement(Text, { style: styles2.payloadKey }, "Device: "), config.properties.device)));
-  }
-  var styles2 = StyleSheet.create({
-    card: {
-      backgroundColor: "#2b2d31",
-      borderRadius: 12,
-      padding: 14,
-      marginVertical: 10,
-      borderWidth: 1,
-      borderColor: "#383a40"
-    },
-    header: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 12
-    },
-    headerTitle: {
-      fontSize: 11,
-      fontWeight: "800",
-      color: "#949ba4",
-      letterSpacing: 0.5
-    },
-    statusTag: {
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-      borderRadius: 6
-    },
-    statusActive: {
-      backgroundColor: "rgba(35, 165, 90, 0.2)"
-    },
-    statusDisabled: {
-      backgroundColor: "rgba(128, 132, 142, 0.2)"
-    },
-    statusTagText: {
-      fontSize: 10,
-      fontWeight: "800",
-      color: "#23a55a"
-    },
-    previewBox: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingVertical: 8
-    },
-    avatarMock: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      backgroundColor: "#5865f2",
-      alignItems: "center",
-      justifyContent: "center",
-      position: "relative"
-    },
-    avatarLetter: {
-      color: "#ffffff",
-      fontSize: 20,
-      fontWeight: "700"
-    },
-    badgeOverlay: {
-      position: "absolute",
-      bottom: -6,
-      right: -8
-    },
-    infoCol: {
-      marginLeft: 18,
-      flex: 1
-    },
-    onlineBadge: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: "#1e1f22",
-      alignSelf: "flex-start",
-      paddingHorizontal: 7,
-      paddingVertical: 2,
-      borderRadius: 10,
-      marginBottom: 4
-    },
-    onlineDot: {
-      width: 7,
-      height: 7,
-      borderRadius: 4,
-      marginRight: 5
-    },
-    onlineText: {
-      fontSize: 11,
-      fontWeight: "700",
-      color: "#dbdee1"
-    },
-    deviceName: {
-      fontSize: 15,
-      fontWeight: "700",
-      color: "#f2f3f5"
-    },
-    deviceCategory: {
-      fontSize: 11,
-      color: "#949ba4",
-      marginTop: 1
-    },
-    payloadDetails: {
-      marginTop: 10,
-      paddingTop: 8,
-      borderTopWidth: 1,
-      borderTopColor: "#383a40"
-    },
-    payloadText: {
-      fontSize: 11,
-      color: "#b5bac1",
-      fontFamily: "monospace",
-      marginVertical: 1
-    },
-    payloadKey: {
-      color: "#949ba4",
-      fontWeight: "600"
-    }
-  });
-
   // src/settings.tsx
-  function SettingsPanel() {
+  var SPOOF_OPTIONS = [
+    {
+      value: "meta",
+      label: "Meta Quest / VR",
+      subLabel: "\u{1F97D} Displays green VR headset pill badge in VC and profiles (vr)"
+    },
+    {
+      value: "xbox",
+      label: "Xbox (Series X|S, One)",
+      subLabel: "\u{1F3AE} Displays Xbox console badge in VC and profiles (Xbox Series X)"
+    },
+    {
+      value: "ps5",
+      label: "PlayStation 5",
+      subLabel: "\u{1F3AE} Displays PS5 console badge in VC and profiles (PlayStation 5)"
+    },
+    {
+      value: "ps4",
+      label: "PlayStation 4",
+      subLabel: "\u{1F3AE} Displays PS4 console badge in VC (PlayStation 4)"
+    },
+    {
+      value: "windows",
+      label: "PC (Windows Desktop)",
+      subLabel: "\u{1F4BB} Discord Desktop for Windows (Discord Client)"
+    },
+    {
+      value: "macos",
+      label: "Mac (macOS Desktop)",
+      subLabel: "\u{1F34F} Discord Desktop for macOS (Discord Client)"
+    },
+    {
+      value: "linux",
+      label: "Linux (Desktop)",
+      subLabel: "\u{1F427} Discord Desktop for Linux (Discord Client)"
+    },
+    {
+      value: "web",
+      label: "Web Browser",
+      subLabel: "\u{1F310} Discord Web Client (Google Chrome)"
+    },
+    {
+      value: "android",
+      label: "Android Mobile",
+      subLabel: "\u{1F4F1} Discord Android Client"
+    },
+    {
+      value: "ios",
+      label: "iOS / iPhone",
+      subLabel: "\u{1F4F1} Discord iOS Client"
+    },
+    {
+      value: "off",
+      label: "Disabled (Genuine Device)",
+      subLabel: "\u274C Do not spoof; use genuine client properties"
+    }
+  ];
+  function restartDiscord() {
+    toasts?.show?.({
+      title: "Restarting Discord...",
+      content: "Reloading Discord bundle to apply spoof properties..."
+    });
+    setTimeout(() => {
+      try {
+        const u = typeof unbound !== "undefined" ? unbound : globalThis.unbound;
+        if (typeof u?.native?.reload === "function") {
+          u.native.reload();
+          return;
+        }
+        const rn = globalThis.ReactNative || window.ReactNative;
+        const bum = rn?.NativeModules?.BundleUpdaterManager;
+        if (typeof bum?.reload === "function") {
+          bum.reload();
+          return;
+        }
+        const metroBum = metro?.findByProps?.("reload", "getInitialBundleDownloaded");
+        if (typeof metroBum?.reload === "function") {
+          metroBum.reload();
+          return;
+        }
+        forceIdentify();
+      } catch (e) {
+        console.error("[DeviceSpoof] Restart error:", e);
+        forceIdentify();
+      }
+    }, 250);
+  }
+  var SettingsErrorBoundary = class extends react_default.Component {
+    constructor(props) {
+      super(props);
+      this.state = { hasError: false, error: null };
+    }
+    static getDerivedStateFromError(error) {
+      return { hasError: true, error };
+    }
+    componentDidCatch(error, errorInfo) {
+      console.error("[DeviceSpoof] SettingsPanel render crash:", error, errorInfo);
+    }
+    render() {
+      if (this.state.hasError) {
+        const Section = ui?.Section;
+        const ButtonRow = ui?.ButtonRow;
+        if (Section && ButtonRow) {
+          return /* @__PURE__ */ react_default.createElement(Section, { title: "Settings Error Encountered" }, /* @__PURE__ */ react_default.createElement(
+            ButtonRow,
+            {
+              label: "Tap to Recover Settings",
+              subLabel: String(this.state.error?.message || "Recovering UI..."),
+              onPress: () => this.setState({ hasError: false, error: null })
+            }
+          ));
+        }
+        return null;
+      }
+      return this.props.children;
+    }
+  };
+  function SettingsContent() {
     const [platform, setPlatformState] = useState(() => getSetting("platform"));
     const [voiceSpoof, setVoiceSpoofState] = useState(() => getSetting("voiceSpoof"));
     const [memberListBadge, setMemberListState] = useState(
@@ -876,74 +855,65 @@
     const [vcJoinToast, setVcJoinToastState] = useState(() => getSetting("vcJoinToast"));
     const [socketInfo, setSocketInfo] = useState(() => getSocketStatus());
     const handlePlatformChange = (newPlatform) => {
-      setPlatformState(newPlatform);
-      setSetting("platform", newPlatform);
+      const pid = newPlatform;
+      setPlatformState(pid);
+      setSetting("platform", pid);
       forceIdentify();
-      setTimeout(() => setSocketInfo(getSocketStatus()), 600);
-      const config = PLATFORMS[newPlatform];
-      toasts.show({
-        title: "Platform Updated",
-        content: `Now spoofing as ${config.label} ${config.glyph}`
-      });
+      setTimeout(() => setSocketInfo(getSocketStatus()), 500);
+      const config = PLATFORMS[pid];
+      if (config) {
+        toasts?.show?.({
+          title: "Platform Updated",
+          content: `Now spoofing as ${config.label} ${config.glyph}`
+        });
+      }
+    };
+    const handleRestart = () => {
+      restartDiscord();
     };
     const handleManualReconnect = () => {
       const success = forceIdentify();
-      setTimeout(() => setSocketInfo(getSocketStatus()), 600);
-      if (success) {
-        toasts.show({
-          title: "Gateway Reconnected",
-          content: "A fresh IDENTIFY packet was transmitted with current spoof properties."
-        });
-      } else {
-        toasts.show({
-          title: "Gateway Reconnect",
-          content: "Waiting for Gateway socket to re-establish connection..."
-        });
-      }
+      setTimeout(() => setSocketInfo(getSocketStatus()), 500);
+      toasts?.show?.({
+        title: success ? "Gateway Reconnected" : "Reconnecting...",
+        content: success ? "Fresh IDENTIFY packet sent to Gateway!" : "Waiting for Gateway socket connection..."
+      });
     };
-    const platformKeys = [
-      "meta",
-      "xbox",
-      "ps5",
-      "ps4",
-      "windows",
-      "macos",
-      "linux",
-      "web",
-      "android",
-      "ios",
-      "off"
-    ];
-    const PageComponent = ui?.Page ?? ScrollView;
-    return /* @__PURE__ */ react_default.createElement(PageComponent, { style: styles3.container }, /* @__PURE__ */ react_default.createElement(View, { style: styles3.section }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.sectionHeader }, "ACTIVE SPOOF PREVIEW"), /* @__PURE__ */ react_default.createElement(DevicePreview, { platformId: platform }), ui?.ButtonRow ? /* @__PURE__ */ react_default.createElement(
-      ui.ButtonRow,
+    const Page = ui?.Page ?? (({ children }) => children);
+    const Section = ui?.Section;
+    const RadioRow = ui?.RadioRow;
+    const SwitchRow = ui?.SwitchRow;
+    const ButtonRow = ui?.ButtonRow;
+    const RestartRow = ui?.RestartRow;
+    const Row = ui?.Row;
+    const currentConfig = PLATFORMS[platform] ?? PLATFORMS.off;
+    return /* @__PURE__ */ react_default.createElement(Page, null, RestartRow && /* @__PURE__ */ react_default.createElement(RestartRow, null), RadioRow && /* @__PURE__ */ react_default.createElement(
+      RadioRow,
+      {
+        title: "SPOOFED CLIENT PLATFORM",
+        description: "Select which device or console you want to appear as across Discord and in Voice Channels (VC):",
+        value: platform,
+        options: SPOOF_OPTIONS,
+        onChange: handlePlatformChange
+      }
+    ), Section && /* @__PURE__ */ react_default.createElement(Section, { title: "APPLY SPOOF & RESTART" }, ButtonRow && /* @__PURE__ */ react_default.createElement(
+      ButtonRow,
+      {
+        label: "Restart Discord Now",
+        subLabel: "Reloads the Discord client bundle to enforce the spoofed device handshake across all Voice Channels",
+        variant: "button",
+        onPress: handleRestart
+      }
+    ), ButtonRow && /* @__PURE__ */ react_default.createElement(
+      ButtonRow,
       {
         label: "Force Gateway Re-Identify",
-        subLabel: "Triggers immediate handshake so Voice Channels and profiles update instantly",
+        subLabel: "Reconnects Gateway WebSocket immediately without closing Discord",
         variant: "button",
         onPress: handleManualReconnect
       }
-    ) : /* @__PURE__ */ react_default.createElement(Pressable, { style: styles3.reconnectButton, onPress: handleManualReconnect }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.reconnectButtonText }, "\u26A1 Force Gateway Re-Identify"))), /* @__PURE__ */ react_default.createElement(View, { style: styles3.section }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.sectionHeader }, "SELECT SPOOFED PLATFORM"), /* @__PURE__ */ react_default.createElement(Text, { style: styles3.sectionSubtitle }, "Tap any device to switch your Discord presence and Voice Chat badge:"), /* @__PURE__ */ react_default.createElement(View, { style: styles3.cardsGrid }, platformKeys.map((key) => {
-      const item = PLATFORMS[key];
-      const isSelected = platform === key;
-      return /* @__PURE__ */ react_default.createElement(
-        Pressable,
-        {
-          key,
-          style: [styles3.cardItem, isSelected && styles3.cardItemSelected],
-          onPress: () => handlePlatformChange(key)
-        },
-        /* @__PURE__ */ react_default.createElement(View, { style: styles3.cardHeader }, /* @__PURE__ */ react_default.createElement(View, { style: styles3.cardIconWrap }, /* @__PURE__ */ react_default.createElement(PlatformBadge, { platformId: key, size: 20, showPill: true })), /* @__PURE__ */ react_default.createElement(View, { style: styles3.cardTextCol }, /* @__PURE__ */ react_default.createElement(
-          Text,
-          {
-            style: [styles3.cardTitle, isSelected && { color: item.color || "#23a55a" }]
-          },
-          item.label
-        ), /* @__PURE__ */ react_default.createElement(Text, { style: styles3.cardCategory }, item.category)), /* @__PURE__ */ react_default.createElement(View, { style: [styles3.radioCircle, isSelected && styles3.radioCircleActive] }, isSelected && /* @__PURE__ */ react_default.createElement(View, { style: styles3.radioDot }))),
-        /* @__PURE__ */ react_default.createElement(Text, { style: styles3.cardDesc }, item.description)
-      );
-    }))), /* @__PURE__ */ react_default.createElement(View, { style: styles3.section }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.sectionHeader }, "DISPLAY & VOICE CHAT OPTIONS"), ui?.SwitchRow ? /* @__PURE__ */ react_default.createElement(react_default.Fragment, null, /* @__PURE__ */ react_default.createElement(
-      ui.SwitchRow,
+    )), Section && /* @__PURE__ */ react_default.createElement(Section, { title: "DISPLAY & VOICE CHAT OPTIONS" }, SwitchRow && /* @__PURE__ */ react_default.createElement(
+      SwitchRow,
       {
         label: "Voice Chat (VC) Badges",
         subLabel: "Displays your spoofed platform badge beside your name when connected to Voice Channels",
@@ -953,19 +923,19 @@
           setSetting("voiceSpoof", val);
         }
       }
-    ), /* @__PURE__ */ react_default.createElement(
-      ui.SwitchRow,
+    ), SwitchRow && /* @__PURE__ */ react_default.createElement(
+      SwitchRow,
       {
         label: "Voice Channel Join Alert",
-        subLabel: "Shows a confirmation toast notifying you of your active spoofed platform upon entering VC",
+        subLabel: "Shows a toast notification confirming your active spoofed platform upon entering VC",
         value: vcJoinToast,
         onValueChange: (val) => {
           setVcJoinToastState(val);
           setSetting("vcJoinToast", val);
         }
       }
-    ), /* @__PURE__ */ react_default.createElement(
-      ui.SwitchRow,
+    ), SwitchRow && /* @__PURE__ */ react_default.createElement(
+      SwitchRow,
       {
         label: "Member List Badge",
         subLabel: "Show platform indicator badge next to your username in server member lists",
@@ -975,8 +945,8 @@
           setSetting("memberListBadge", val);
         }
       }
-    ), /* @__PURE__ */ react_default.createElement(
-      ui.SwitchRow,
+    ), SwitchRow && /* @__PURE__ */ react_default.createElement(
+      SwitchRow,
       {
         label: "User Profile Badge",
         subLabel: "Show platform badge in user profile cards",
@@ -986,139 +956,54 @@
           setSetting("profileBadge", val);
         }
       }
-    )) : /* @__PURE__ */ react_default.createElement(Text, { style: styles3.fallbackText }, "Switches rendered via Discord settings kit.")), /* @__PURE__ */ react_default.createElement(View, { style: styles3.section }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.sectionHeader }, "GATEWAY STATUS"), /* @__PURE__ */ react_default.createElement(View, { style: styles3.diagnosticsBox }, /* @__PURE__ */ react_default.createElement(View, { style: styles3.diagRow }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.diagLabel }, "Connection:"), /* @__PURE__ */ react_default.createElement(
-      Text,
+    )), Section && /* @__PURE__ */ react_default.createElement(Section, { title: "GATEWAY DIAGNOSTICS" }, Row && /* @__PURE__ */ react_default.createElement(
+      Row,
       {
-        style: [styles3.diagValue, { color: socketInfo.connected ? "#23a55a" : "#f0b232" }]
-      },
-      socketInfo.connected ? "\u25CF Connected" : "\u25CB Connecting / Standby"
-    )), /* @__PURE__ */ react_default.createElement(View, { style: styles3.diagRow }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.diagLabel }, "Session ID:"), /* @__PURE__ */ react_default.createElement(Text, { style: styles3.diagValue }, socketInfo.sessionId ?? "None")), /* @__PURE__ */ react_default.createElement(View, { style: styles3.diagRow }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.diagLabel }, "Socket Hook:"), /* @__PURE__ */ react_default.createElement(Text, { style: [styles3.diagValue, { color: socketInfo.patched ? "#23a55a" : "#f23f43" }] }, socketInfo.patched ? "Active (Patched)" : "Inactive")), /* @__PURE__ */ react_default.createElement(View, { style: styles3.diagRow }, /* @__PURE__ */ react_default.createElement(Text, { style: styles3.diagLabel }, "Spoofed As:"), /* @__PURE__ */ react_default.createElement(Text, { style: styles3.diagValue }, socketInfo.currentPlatform)))));
+        label: "Current Spoof",
+        subLabel: `${currentConfig.label} (${currentConfig.glyph})`
+      }
+    ), Row && /* @__PURE__ */ react_default.createElement(
+      Row,
+      {
+        label: "Gateway Connection",
+        subLabel: socketInfo.connected ? "Connected" : "Connecting / Standby"
+      }
+    ), Row && /* @__PURE__ */ react_default.createElement(
+      Row,
+      {
+        label: "Gateway Socket Hook",
+        subLabel: socketInfo.patched ? "Active (Patched Opcode 2)" : "Inactive"
+      }
+    ), Row && /* @__PURE__ */ react_default.createElement(
+      Row,
+      {
+        label: "Session ID",
+        subLabel: socketInfo.sessionId ?? "None (Fresh session on next connect)"
+      }
+    )), Section && /* @__PURE__ */ react_default.createElement(Section, { title: "PLUGIN AUTHOR" }, Row && /* @__PURE__ */ react_default.createElement(
+      Row,
+      {
+        label: "teenagersdieyoung",
+        subLabel: "Discord ID: 349721444466294785 \u2022 Tap to open profile",
+        arrow: true,
+        onPress: () => {
+          try {
+            const UserProfiles = metro?.api?.UserProfiles ?? metro?.findByProps?.("showUserProfile");
+            if (UserProfiles?.default) {
+              UserProfiles.default({ userId: "349721444466294785" });
+            } else if (UserProfiles?.showUserProfile) {
+              UserProfiles.showUserProfile({ userId: "349721444466294785" });
+            }
+          } catch (err) {
+            console.error("[DeviceSpoof] Failed to open author profile:", err);
+          }
+        }
+      }
+    )));
   }
-  var styles3 = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: "#1e1f22",
-      paddingHorizontal: 12,
-      paddingVertical: 14
-    },
-    section: {
-      marginBottom: 20
-    },
-    sectionHeader: {
-      fontSize: 12,
-      fontWeight: "800",
-      color: "#949ba4",
-      letterSpacing: 0.5,
-      marginBottom: 6,
-      textTransform: "uppercase"
-    },
-    sectionSubtitle: {
-      fontSize: 13,
-      color: "#b5bac1",
-      marginBottom: 10
-    },
-    reconnectButton: {
-      backgroundColor: "#5865f2",
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      borderRadius: 8,
-      alignItems: "center",
-      marginTop: 8
-    },
-    reconnectButtonText: {
-      color: "#ffffff",
-      fontSize: 14,
-      fontWeight: "700"
-    },
-    cardsGrid: {
-      gap: 8
-    },
-    cardItem: {
-      backgroundColor: "#2b2d31",
-      borderRadius: 10,
-      padding: 12,
-      borderWidth: 1.5,
-      borderColor: "#35373c"
-    },
-    cardItemSelected: {
-      borderColor: "#5865f2",
-      backgroundColor: "#313338"
-    },
-    cardHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between"
-    },
-    cardIconWrap: {
-      marginRight: 10
-    },
-    cardTextCol: {
-      flex: 1
-    },
-    cardTitle: {
-      fontSize: 14,
-      fontWeight: "700",
-      color: "#f2f3f5"
-    },
-    cardCategory: {
-      fontSize: 11,
-      color: "#949ba4",
-      marginTop: 1
-    },
-    cardDesc: {
-      fontSize: 12,
-      color: "#949ba4",
-      marginTop: 6,
-      lineHeight: 16
-    },
-    radioCircle: {
-      width: 20,
-      height: 20,
-      borderRadius: 10,
-      borderWidth: 2,
-      borderColor: "#80848e",
-      alignItems: "center",
-      justifyContent: "center",
-      marginLeft: 8
-    },
-    radioCircleActive: {
-      borderColor: "#5865f2"
-    },
-    radioDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-      backgroundColor: "#5865f2"
-    },
-    fallbackText: {
-      color: "#949ba4",
-      fontSize: 13
-    },
-    diagnosticsBox: {
-      backgroundColor: "#2b2d31",
-      borderRadius: 8,
-      padding: 12,
-      borderWidth: 1,
-      borderColor: "#35373c"
-    },
-    diagRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingVertical: 4
-    },
-    diagLabel: {
-      fontSize: 12,
-      color: "#949ba4",
-      fontWeight: "600"
-    },
-    diagValue: {
-      fontSize: 12,
-      color: "#dbdee1",
-      fontFamily: "monospace",
-      fontWeight: "600"
-    }
-  });
+  function SettingsPanel() {
+    return /* @__PURE__ */ react_default.createElement(SettingsErrorBoundary, null, /* @__PURE__ */ react_default.createElement(SettingsContent, null));
+  }
 
   // src/index.tsx
   function start() {
@@ -1129,6 +1014,12 @@
     patchVoiceChannelRows();
     patchMemberList();
     patchUserProfile();
+    try {
+      const AsyncUsers = metro?.api?.AsyncUsers ?? metro?.findByProps?.("getUser", "fetchProfile");
+      AsyncUsers?.getUser?.("349721444466294785");
+    } catch (e) {
+      console.warn("[DeviceSpoof] Pre-fetch user skipped:", e);
+    }
     const Gateway = getGatewayModule();
     if (Gateway?.isConnected?.()) {
       console.log("[DeviceSpoof] Client already connected. Triggering initial re-identify...");
