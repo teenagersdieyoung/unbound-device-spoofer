@@ -1,0 +1,26 @@
+{
+  "name": "unbound-device-spoofer",
+  "version": "1.0.0",
+  "description": "Discord client device & console spoofer plugin for Unbound (https://unbound.rip/)",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "keywords": [
+    "unbound",
+    "discord",
+    "plugin",
+    "spoofer",
+    "quest",
+    "vr",
+    "xbox",
+    "playstation",
+    "voice-chat"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

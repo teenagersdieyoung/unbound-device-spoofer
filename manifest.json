@@ -1,0 +1,17 @@
+{
+	"id": "unbound.device-spoof",
+	"name": "Device & Console Spoofer",
+	"description": "Spoof your client to Meta Quest / VR, Xbox, PlayStation 5, PC, or Browser across Discord and in Voice Channels (VC).",
+	"authors": [
+		{
+			"name": "Antigravity",
+			"id": "100000000000000000"
+		}
+	],
+	"version": "1.0.0",
+	"unbound": {
+		"min": "3.0.0"
+	},
+	"icon": "HeadsetIcon",
+	"main": "index.js"
+}
