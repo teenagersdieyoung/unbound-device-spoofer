@@ -64,7 +64,7 @@ unbound.rip plugin/
 
 ### Method 1: Installing via GitHub Repository Link (Recommended)
 
-1. Upload or push this folder to your GitHub account (e.g. `https://github.com/your-username/unbound-device-spoofer`).
+1. Upload or push this folder to your GitHub account (e.g. `https://github.com/teenagersdieyoung/unbound-device-spoofer`).
 2. Open **Discord** on your mobile device with **Unbound** installed.
 3. Open **User Settings** (tap your avatar in the bottom tab) $\rightarrow$ scroll down to the **Unbound** section.
 4. Tap **Plugins** $\rightarrow$ tap the **+** (Install) icon in the top corner.
