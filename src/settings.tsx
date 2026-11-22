@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ui, toasts, metro } from '@unbound-app/api';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { PLATFORMS, type PlatformId } from './lib/constants';
 import { getSetting, setSetting } from './lib/storage';
 import { forceIdentify, getSocketStatus } from './lib/gateway';
@@ -194,13 +195,51 @@ function SettingsContent() {
 		});
 	};
 
-	const Page = ui?.Page ?? (({ children }: any) => children);
-	const Section = ui?.Section;
-	const RadioRow = ui?.RadioRow;
-	const SwitchRow = ui?.SwitchRow;
-	const ButtonRow = ui?.ButtonRow;
+	// Unbound's UI API differs between app builds. Keep the native rows when
+	// available, but provide a React Native fallback so an unsupported component
+	// never turns the entire settings screen into an empty page.
+	const NativeText = ({ children, style }: any) => <Text style={style}>{children}</Text>;
+	const Page = ui?.Page ?? (({ children }: any) => <ScrollView>{children}</ScrollView>);
+	const Section = ui?.Section ?? (({ title, children }: any) => (
+		<View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 8 }}>
+			<NativeText style={{ color: '#b5bac1', fontSize: 13, fontWeight: '700', marginBottom: 8 }}>{title}</NativeText>
+			{children}
+		</View>
+	));
+	const Row = ui?.Row ?? (({ label, subLabel, onPress }: any) => {
+		const content = <View style={{ paddingVertical: 10 }}>
+			<NativeText style={{ color: '#f2f3f5', fontSize: 16 }}>{label}</NativeText>
+			{!!subLabel && <NativeText style={{ color: '#b5bac1', fontSize: 13, marginTop: 3 }}>{subLabel}</NativeText>}
+		</View>;
+		return onPress ? <Pressable onPress={onPress}>{content}</Pressable> : content;
+	});
+	const SwitchRow = ui?.SwitchRow ?? (({ label, subLabel, value, onValueChange }: any) => (
+		<Pressable onPress={() => onValueChange(!value)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 }}>
+			<View style={{ flex: 1, paddingRight: 12 }}>
+				<NativeText style={{ color: '#f2f3f5', fontSize: 16 }}>{label}</NativeText>
+				{!!subLabel && <NativeText style={{ color: '#b5bac1', fontSize: 13, marginTop: 3 }}>{subLabel}</NativeText>}
+			</View>
+			<NativeText style={{ color: value ? '#23a55a' : '#949ba4', fontWeight: '700' }}>{value ? 'ON' : 'OFF'}</NativeText>
+		</Pressable>
+	));
+	const ButtonRow = ui?.ButtonRow ?? (({ label, subLabel, onPress }: any) => (
+		<Pressable onPress={onPress} style={{ paddingVertical: 10 }}>
+			<NativeText style={{ color: '#00a8fc', fontSize: 16 }}>{label}</NativeText>
+			{!!subLabel && <NativeText style={{ color: '#b5bac1', fontSize: 13, marginTop: 3 }}>{subLabel}</NativeText>}
+		</Pressable>
+	));
+	const RadioRow = ui?.RadioRow ?? (({ title, description, value, options, onChange }: any) => (
+		<Section title={title}>
+			{!!description && <NativeText style={{ color: '#b5bac1', fontSize: 13, marginBottom: 8 }}>{description}</NativeText>}
+			{options.map((option: ChoiceOption) => (
+				<Pressable key={option.value} onPress={() => onChange(option.value)} style={{ paddingVertical: 8 }}>
+					<NativeText style={{ color: value === option.value ? '#23a55a' : '#f2f3f5', fontSize: 16 }}>{value === option.value ? '● ' : '○ '}{option.label}</NativeText>
+					{!!option.subLabel && <NativeText style={{ color: '#b5bac1', fontSize: 13, marginLeft: 24, marginTop: 2 }}>{option.subLabel}</NativeText>}
+				</Pressable>
+			))}
+		</Section>
+	));
 	const RestartRow = ui?.RestartRow;
-	const Row = ui?.Row;
 
 	const currentConfig = PLATFORMS[platform] ?? PLATFORMS.off;
 
@@ -221,7 +260,7 @@ function SettingsContent() {
 			)}
 
 			{/* Apply Spoof & Restart Controls */}
-			{Section && (
+			{(
 				<Section title="APPLY SPOOF & RESTART">
 					{ButtonRow && (
 						<ButtonRow
@@ -243,7 +282,7 @@ function SettingsContent() {
 			)}
 
 			{/* Display & Voice Chat Options */}
-			{Section && (
+			{(
 				<Section title="DISPLAY & VOICE CHAT OPTIONS">
 					{SwitchRow && (
 						<SwitchRow
@@ -293,7 +332,7 @@ function SettingsContent() {
 			)}
 
 			{/* Connection Diagnostics */}
-			{Section && (
+			{(
 				<Section title="GATEWAY DIAGNOSTICS">
 					{Row && (
 						<Row
@@ -323,7 +362,7 @@ function SettingsContent() {
 			)}
 
 			{/* Plugin Author & Profile Navigation */}
-			{Section && (
+			{(
 				<Section title="PLUGIN AUTHOR">
 					{Row && (
 						<Row

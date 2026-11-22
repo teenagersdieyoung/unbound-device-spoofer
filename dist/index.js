@@ -472,6 +472,18 @@
     const Comp = rn.Text;
     return Comp && r ? r.createElement(Comp, props) : props?.children ?? null;
   };
+  var Pressable = (props) => {
+    const rn = getRN();
+    const r = getReact();
+    const Comp = rn.Pressable;
+    return Comp && r ? r.createElement(Comp, props) : props?.children ?? null;
+  };
+  var ScrollView = (props) => {
+    const rn = getRN();
+    const r = getReact();
+    const Comp = rn.ScrollView;
+    return Comp && r ? r.createElement(Comp, props) : props?.children ?? null;
+  };
   var StyleSheet = {
     create: (s) => s,
     flatten: (s) => Array.isArray(s) ? Object.assign({}, ...s.filter(Boolean)) : s
@@ -879,13 +891,17 @@
         content: success ? "Fresh IDENTIFY packet sent to Gateway!" : "Waiting for Gateway socket connection..."
       });
     };
-    const Page = ui?.Page ?? (({ children }) => children);
-    const Section = ui?.Section;
-    const RadioRow = ui?.RadioRow;
-    const SwitchRow = ui?.SwitchRow;
-    const ButtonRow = ui?.ButtonRow;
+    const NativeText = ({ children, style }) => /* @__PURE__ */ react_default.createElement(Text, { style }, children);
+    const Page = ui?.Page ?? (({ children }) => /* @__PURE__ */ react_default.createElement(ScrollView, null, children));
+    const Section = ui?.Section ?? (({ title, children }) => /* @__PURE__ */ react_default.createElement(View, { style: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 8 } }, /* @__PURE__ */ react_default.createElement(NativeText, { style: { color: "#b5bac1", fontSize: 13, fontWeight: "700", marginBottom: 8 } }, title), children));
+    const Row = ui?.Row ?? (({ label, subLabel, onPress }) => {
+      const content = /* @__PURE__ */ react_default.createElement(View, { style: { paddingVertical: 10 } }, /* @__PURE__ */ react_default.createElement(NativeText, { style: { color: "#f2f3f5", fontSize: 16 } }, label), !!subLabel && /* @__PURE__ */ react_default.createElement(NativeText, { style: { color: "#b5bac1", fontSize: 13, marginTop: 3 } }, subLabel));
+      return onPress ? /* @__PURE__ */ react_default.createElement(Pressable, { onPress }, content) : content;
+    });
+    const SwitchRow = ui?.SwitchRow ?? (({ label, subLabel, value, onValueChange }) => /* @__PURE__ */ react_default.createElement(Pressable, { onPress: () => onValueChange(!value), style: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8 } }, /* @__PURE__ */ react_default.createElement(View, { style: { flex: 1, paddingRight: 12 } }, /* @__PURE__ */ react_default.createElement(NativeText, { style: { color: "#f2f3f5", fontSize: 16 } }, label), !!subLabel && /* @__PURE__ */ react_default.createElement(NativeText, { style: { color: "#b5bac1", fontSize: 13, marginTop: 3 } }, subLabel)), /* @__PURE__ */ react_default.createElement(NativeText, { style: { color: value ? "#23a55a" : "#949ba4", fontWeight: "700" } }, value ? "ON" : "OFF")));
+    const ButtonRow = ui?.ButtonRow ?? (({ label, subLabel, onPress }) => /* @__PURE__ */ react_default.createElement(Pressable, { onPress, style: { paddingVertical: 10 } }, /* @__PURE__ */ react_default.createElement(NativeText, { style: { color: "#00a8fc", fontSize: 16 } }, label), !!subLabel && /* @__PURE__ */ react_default.createElement(NativeText, { style: { color: "#b5bac1", fontSize: 13, marginTop: 3 } }, subLabel)));
+    const RadioRow = ui?.RadioRow ?? (({ title, description, value, options, onChange }) => /* @__PURE__ */ react_default.createElement(Section, { title }, !!description && /* @__PURE__ */ react_default.createElement(NativeText, { style: { color: "#b5bac1", fontSize: 13, marginBottom: 8 } }, description), options.map((option) => /* @__PURE__ */ react_default.createElement(Pressable, { key: option.value, onPress: () => onChange(option.value), style: { paddingVertical: 8 } }, /* @__PURE__ */ react_default.createElement(NativeText, { style: { color: value === option.value ? "#23a55a" : "#f2f3f5", fontSize: 16 } }, value === option.value ? "\u25CF " : "\u25CB ", option.label), !!option.subLabel && /* @__PURE__ */ react_default.createElement(NativeText, { style: { color: "#b5bac1", fontSize: 13, marginLeft: 24, marginTop: 2 } }, option.subLabel)))));
     const RestartRow = ui?.RestartRow;
-    const Row = ui?.Row;
     const currentConfig = PLATFORMS[platform] ?? PLATFORMS.off;
     return /* @__PURE__ */ react_default.createElement(Page, null, RestartRow && /* @__PURE__ */ react_default.createElement(RestartRow, null), RadioRow && /* @__PURE__ */ react_default.createElement(
       RadioRow,
@@ -896,7 +912,7 @@
         options: SPOOF_OPTIONS,
         onChange: handlePlatformChange
       }
-    ), Section && /* @__PURE__ */ react_default.createElement(Section, { title: "APPLY SPOOF & RESTART" }, ButtonRow && /* @__PURE__ */ react_default.createElement(
+    ), /* @__PURE__ */ react_default.createElement(Section, { title: "APPLY SPOOF & RESTART" }, ButtonRow && /* @__PURE__ */ react_default.createElement(
       ButtonRow,
       {
         label: "Restart Discord Now",
@@ -912,7 +928,7 @@
         variant: "button",
         onPress: handleManualReconnect
       }
-    )), Section && /* @__PURE__ */ react_default.createElement(Section, { title: "DISPLAY & VOICE CHAT OPTIONS" }, SwitchRow && /* @__PURE__ */ react_default.createElement(
+    )), /* @__PURE__ */ react_default.createElement(Section, { title: "DISPLAY & VOICE CHAT OPTIONS" }, SwitchRow && /* @__PURE__ */ react_default.createElement(
       SwitchRow,
       {
         label: "Voice Chat (VC) Badges",
@@ -956,7 +972,7 @@
           setSetting("profileBadge", val);
         }
       }
-    )), Section && /* @__PURE__ */ react_default.createElement(Section, { title: "GATEWAY DIAGNOSTICS" }, Row && /* @__PURE__ */ react_default.createElement(
+    )), /* @__PURE__ */ react_default.createElement(Section, { title: "GATEWAY DIAGNOSTICS" }, Row && /* @__PURE__ */ react_default.createElement(
       Row,
       {
         label: "Current Spoof",
@@ -980,7 +996,7 @@
         label: "Session ID",
         subLabel: socketInfo.sessionId ?? "None (Fresh session on next connect)"
       }
-    )), Section && /* @__PURE__ */ react_default.createElement(Section, { title: "PLUGIN AUTHOR" }, Row && /* @__PURE__ */ react_default.createElement(
+    )), /* @__PURE__ */ react_default.createElement(Section, { title: "PLUGIN AUTHOR" }, Row && /* @__PURE__ */ react_default.createElement(
       Row,
       {
         label: "teenagersdieyoung",
